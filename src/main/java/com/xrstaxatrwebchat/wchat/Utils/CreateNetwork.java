@@ -16,7 +16,7 @@ public class CreateNetwork {
     @Bean
     public ComputationGraph loadGraphFromMemory(Context ctx) throws Exception{
 
-        String modelFileName = ""; // (String) ctx.lookup("java:comp/env/MODEL_FILENAME");
+        String modelFileName = (String) ctx.lookup("java:comp/env/MODEL_FILENAME");
         File networkFile = new File(new FileLoads().toTempPath(modelFileName, ctx));
 
         if (networkFile.exists()) {

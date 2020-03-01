@@ -90,13 +90,6 @@ public class CorpusProcessor {
 
         String specials = "!\"#$;%^:?*()[]{}<>«»,.–—=+…";
 
-//			try{
-//				specials = (String) ctx.lookup("java:comp/env/SPECIALS");
-//			}catch (NamingException ne){
-//				ne.printStackTrace();
-//			}
-
-
         String[] words = lastLine.split(" ");
 
         for (String word : words) {

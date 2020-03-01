@@ -12,20 +12,21 @@ import org.springframework.context.annotation.Configuration;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
-//@Configuration
-//@EnableConfigurationProperties
+@Configuration
+@EnableConfigurationProperties
 public class AppConfigs{
 
-//    @Bean
+    @Bean
     Seq2SeqModel runInstance() {
         return new Seq2SeqModel();
     }
 
-//    @Bean
+    @Bean
     ComputationGraph netInstance() throws Exception {
 
         ComputationGraph compNet = null;
         try {
+
 
             Context contx = new GetInitContext().fun();
 
