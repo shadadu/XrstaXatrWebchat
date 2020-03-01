@@ -5,12 +5,17 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinService;
+import com.vaadin.flow.server.VaadinSession;
 import com.xrstaxatrwebchat.wchat.Utils.CorpusProcessor;
 import com.xrstaxatrwebchat.wchat.Utils.GetInitContext;
 import com.xrstaxatrwebchat.wchat.Utils.StringFmtr;
@@ -25,10 +30,10 @@ import reactor.core.publisher.UnicastProcessor;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -43,12 +48,12 @@ import java.util.logging.Logger;
  * A new instance of this class is created for every new user and every
  * browser tab/window.
  */
+
 @Viewport("width=device-width, height=100vw, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes")
 @StyleSheet("frontend://styles/styles.css")
 @Route
-//@PWA(name = "XrstaXatr Chat", shortName = "xrsta xatr")
 @Push
-public class MainView extends VerticalLayout {
+public class MainView extends VerticalLayout  {
 
     /**
      * Construct a new Vaadin view.
@@ -62,31 +67,25 @@ public class MainView extends VerticalLayout {
     private String username;
     private List<String> currentUsers;
 
+    private UI savedUI;
+
+    Logger logger = Logger.getAnonymousLogger();
+
     @Autowired
     private ComputationGraph net;
 
     @Autowired
     private CorpusProcessor corpusProcessor;
-    private ComponentEventListener componentEventListener;
-    private AttachEvent attachEvent;
 
-//    public MainView() {
-//        super();
-//    }
-
-    @Override
-    protected void onAttach(AttachEvent attachEvent){
-
-    }
-
-    public MainView(UnicastProcessor<ChatMessage> publisher,
-                    Flux<ChatMessage> messages) {
+    public MainView(UnicastProcessor<ChatMessage> publisher, Flux<ChatMessage> messages) {
 
         this.publisher = publisher;
         this.messages = messages;
         addClassName("main-view");
+        setWidth("80%");
+        setHeight("80%");
 
-        setSizeFull();
+//        setSizeFull();
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
         H1 header = new H1("XrstaXatr \\{o_o}/ ... a chatbot with christian sensibilities");
@@ -121,70 +120,68 @@ public class MainView extends VerticalLayout {
         add(layout);
     }
 
-    private  void showChat(){
+    private  void showChat() {
 
         UI currUi = UI.getCurrent();
 
+        VaadinSession session  = currUi.getSession();
 
-
-
-
-
+        logger.info("currUi id: "+currUi.getUIId() +" router "+ currUi.getInternals().getRouter());
         MessageList messageList = new MessageList();
 
         add(messageList, createInputLayout());
         expand(messageList);
 
+        
+        if( session == null ){
+            logger.info("session is NULL");
+            new Thread(()->{
 
+                logger.info("new thread spawned");
+                UI.setCurrent(savedUI);
+                VaadinSession.setCurrent(savedUI.getSession());
+                messages.subscribe( message -> {
+                    logger.info("message w/ new thread created");
+                    savedUI.access( () ->messageList.add(
+                                    new Paragraph(message.getFrom() + ": " +
+                                            message.getMessage()) ));
+                        }
 
-        String mostPreviousMessage = "";
+                );
+            }
 
-//        messages.subscribe(message -> {
-//            getUI().ifPresent(ui ->
-//                    ui.access(() ->
-//                            messageList.add(
-//                                    new Paragraph(message.getFrom() + ": " +
-//                                            message.getMessage())
-//                            )
-//                    ));
-//
-//        });
+            ).start();
 
-
-        super.onAttach();
-
-        messages.subscribe(message -> {
-            try{
-
-                currUi.getSession();
+        }else{
+            logger.info("session is NOT NULL");
+            messages.subscribe( msg -> {
+                logger.info("message w/o new thread");
                 getUI().ifPresent(ui ->
-                        ui.access(() ->
-                                messageList.add(
-                                        new Paragraph(message.getFrom() + ": " +
-                                                message.getMessage())
+                        ui.access(() -> messageList.add(
+                                new Paragraph(msg.getFrom() + ": " +
+                                        msg.getMessage())
                                 )
                         ));
+                        savedUI = getUI().get();
+                }
+            );
+        }
 
-            }catch(UIDetachedException uide){
-                System.out.println("Error ui detached: "  );
-//                uide.printStackTrace();
-//                uide.getLocalizedMessage();
-                HorizontalLayout layout = new HorizontalLayout();
-                TextField userNameField = new TextField();
-                add(layout);
-                showChat();
-                messages.subscribe(msg -> {
-                    getUI().ifPresent(ui ->
-                        ui.access(() ->
-                            messageList.add(
-                                    new Paragraph(msg.getFrom() + ": " +
-                                            msg.getMessage())
-                            )
-                        ));
+//        messages.subscribe( msg -> {
+//            getUI().ifPresent(ui ->
+//
+//                            ui.access(() ->
+//                                    messageList.add(
+//                                            new Paragraph(msg.getFrom() + ": " +
+//                                                    msg.getMessage())
+//                                    )
+//
+//                            ));
+//                    savedUI = getUI().get();
+//                }
+//
+//        );
 
-                    });
-            }
-        });
     }
 
     private Component createInputLayout() {
