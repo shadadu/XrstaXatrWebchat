@@ -126,35 +126,16 @@ public class MainView extends VerticalLayout  {
 
         VaadinSession session  = currUi.getSession();
 
-        logger.info("currUi id: "+currUi.getUIId() +" router "+ currUi.getInternals().getRouter());
+        logger.info("currUi id: "+currUi.getUIId() +" router "
+                + java.util.Arrays.toString(currUi.getInternals().getRouter().getRegistry().getRegisteredRoutes().toArray())
+        );
         MessageList messageList = new MessageList();
 
         add(messageList, createInputLayout());
         expand(messageList);
 
-        
-        if( session == null ){
-            logger.info("session is NULL");
-            new Thread(()->{
-
-                logger.info("new thread spawned");
-                UI.setCurrent(savedUI);
-                VaadinSession.setCurrent(savedUI.getSession());
-                messages.subscribe( message -> {
-                    logger.info("message w/ new thread created");
-                    savedUI.access( () ->messageList.add(
-                                    new Paragraph(message.getFrom() + ": " +
-                                            message.getMessage()) ));
-                        }
-
-                );
-            }
-
-            ).start();
-
-        }else{
-            logger.info("session is NOT NULL");
-            messages.subscribe( msg -> {
+        messages.subscribe( msg -> {
+            try{
                 logger.info("message w/o new thread");
                 getUI().ifPresent(ui ->
                         ui.access(() -> messageList.add(
@@ -162,10 +143,68 @@ public class MainView extends VerticalLayout  {
                                         msg.getMessage())
                                 )
                         ));
-                        savedUI = getUI().get();
+                savedUI = getUI().get();
+            }catch (UIDetachedException uide){
+                logger.info("Got UIDetachedException");
+                logger.info("session is NULL");
+                new Thread(()->{
+
+                    logger.info("new thread spawned");
+                    UI.setCurrent(savedUI);
+                    VaadinSession.setCurrent(savedUI.getSession());
+                    messages.subscribe( message -> {
+                                logger.info("message w/ new thread created");
+                                savedUI.access( () ->messageList.add(
+                                        new Paragraph(message.getFrom() + ": " +
+                                                message.getMessage()) ));
+                            }
+
+                    );
                 }
-            );
-        }
+
+                ).start();
+//                throw new UIDetachedException();
+            }
+            }
+
+        );
+
+
+
+
+//        if( session == null ){
+//            logger.info("session is NULL");
+//            new Thread(()->{
+//
+//                logger.info("new thread spawned");
+//                UI.setCurrent(savedUI);
+//                VaadinSession.setCurrent(savedUI.getSession());
+//                messages.subscribe( message -> {
+//                    logger.info("message w/ new thread created");
+//                    savedUI.access( () ->messageList.add(
+//                                    new Paragraph(message.getFrom() + ": " +
+//                                            message.getMessage()) ));
+//                        }
+//
+//                );
+//            }
+//
+//            ).start();
+//
+//        }else{
+//            logger.info("session is NOT NULL");
+//            messages.subscribe( msg -> {
+//                logger.info("message w/o new thread");
+//                getUI().ifPresent(ui ->
+//                        ui.access(() -> messageList.add(
+//                                new Paragraph(msg.getFrom() + ": " +
+//                                        msg.getMessage())
+//                                )
+//                        ));
+//                        savedUI = getUI().get();
+//                }
+//            );
+//        }
 
 //        messages.subscribe( msg -> {
 //            getUI().ifPresent(ui ->
