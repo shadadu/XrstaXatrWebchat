@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
+import java.util.logging.Logger;
 
 @Configuration
 @EnableConfigurationProperties
@@ -39,7 +40,7 @@ public class AppConfigs{
         	        contx.close();
                 }
             }catch(NamingException ne){
-        	    System.out.println("Error removing contexloader "+ne.getExplanation());
+                Logger.getAnonymousLogger().info("Error removing contexloader " + ne.getExplanation());
         	    ne.printStackTrace();
             }
 
@@ -67,14 +68,14 @@ public class AppConfigs{
                     context.close();
                 }
             }catch(NamingException ne){
-                System.out.println("Error removing contexloader "+ne.getExplanation());
+                Logger.getAnonymousLogger().info("Error removing contexloader "+ne.getExplanation());
                 ne.printStackTrace();
             }
 
             return corpusProcessor;
 
         } catch (Exception e) {
-            System.out.println("Failed to create dictionary & corpus");
+            Logger.getAnonymousLogger().info("Failed to create dictionary & corpus");
             e.printStackTrace();
             return null;
         }

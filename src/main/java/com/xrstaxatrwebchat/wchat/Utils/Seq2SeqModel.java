@@ -2,7 +2,7 @@ package com.xrstaxatrwebchat.wchat.Utils;
 
 import javax.naming.Context;
 import java.util.*;
-
+import java.util.logging.Logger;
 
 
 public class Seq2SeqModel {
@@ -11,6 +11,7 @@ public class Seq2SeqModel {
     private final Map<Double, String> revDict = new HashMap<>();
     private final List<List<Double>> corpus = new ArrayList<>();
     private FileLoads fileLoads = new FileLoads();
+    private Logger modelLogger = Logger.getLogger("Model-Logger");
 
     public CorpusProcessor createDictionary(Context ctx) throws Exception {
 
@@ -35,7 +36,7 @@ public class Seq2SeqModel {
                 ++idx;
             }
         }
-        System.out.println("Load corpus and building the dictionary...");
+        modelLogger.info("Load corpus and building the dictionary...");
 
         CorpusProcessor corpusProcessor = new CorpusProcessor(fileLoads.toTempPath(corpusFileName, ctx), rowSize, true);
 
@@ -72,7 +73,7 @@ public class Seq2SeqModel {
             }
         }
 
-        System.out.println("Dictionary is ready, size is " + dictSet.size());
+        modelLogger.info("Dictionary is ready, size is " + dictSet.size());
         // index the dictionary and build the reverse dictionary for lookups
         for (String word : dictSet) {
             if (!dict.containsKey(word)) {
@@ -81,7 +82,7 @@ public class Seq2SeqModel {
                 ++idx;
             }
         }
-        System.out.println("Total dictionary size is " + dict.size() + ". Load corpus and processing the corpus dataset...");
+        modelLogger.info("Total dictionary size is " + dict.size() + ". Load corpus and processing the corpus dataset...");
         corpusProcessor = new CorpusProcessor(fileLoads.toTempPath(corpusFileName, ctx), rowSize, false) {
             @Override
             protected void processLine(String lastLine, Context cntxt) {
@@ -94,7 +95,7 @@ public class Seq2SeqModel {
         corpusProcessor.setRevDict(revDict);
         corpusProcessor.start(ctx);
         corpusProcessor.setCorpusSize(corpus.size());
-        System.out.println("Done. Corpus size is " + corpus.size());
+        modelLogger.info("Done. Corpus size is " + corpus.size());
         return corpusProcessor;
     }
 

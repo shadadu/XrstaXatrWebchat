@@ -4,6 +4,7 @@ import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Paragraph;
@@ -13,6 +14,7 @@ import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.server.VaadinRequest;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
@@ -25,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.PWA;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
@@ -33,7 +36,6 @@ import javax.naming.NamingException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
@@ -48,7 +50,7 @@ import java.util.logging.Logger;
  * A new instance of this class is created for every new user and every
  * browser tab/window.
  */
-
+@PageTitle("xrstaxatr")
 @Viewport("width=device-width, height=100vw, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes")
 @StyleSheet("frontend://styles/styles.css")
 @Route
@@ -66,10 +68,8 @@ public class MainView extends VerticalLayout  {
     private Flux<ChatMessage> messages;
     private String username;
     private List<String> currentUsers;
-
     private UI savedUI;
-
-    Logger logger = Logger.getAnonymousLogger();
+    private Logger logger = Logger.getLogger("MainView-logger");
 
     @Autowired
     private ComputationGraph net;
@@ -82,13 +82,17 @@ public class MainView extends VerticalLayout  {
         this.publisher = publisher;
         this.messages = messages;
         addClassName("main-view");
-        setWidth("80%");
-        setHeight("80%");
 
-//        setSizeFull();
+        setSizeFull();
+        setAlignItems(Alignment.CENTER);
         setDefaultHorizontalComponentAlignment(Alignment.CENTER);
 
+        setPadding(true);
+        setMargin(true);
+
         H1 header = new H1("XrstaXatr \\{o_o}/ ... a chatbot with christian sensibilities");
+        header.getElement().getStyle().set("text-align", "center");
+
         header.getElement().getThemeList().add("dark");
 
         add(header);
@@ -98,9 +102,11 @@ public class MainView extends VerticalLayout  {
     }
 
     private void askUsername(){
+
         HorizontalLayout layout = new HorizontalLayout();
         TextField userNameField = new TextField();
         Button startButton = new Button("Enter your name to start chat...");
+
         List<String> RESERVED_NAMES = Arrays.asList("bot", "chatbot", "moderator", "imod");
 
         layout.add(userNameField, startButton);
@@ -126,9 +132,7 @@ public class MainView extends VerticalLayout  {
 
         VaadinSession session  = currUi.getSession();
 
-        logger.info("currUi id: "+currUi.getUIId() +" router "
-                + java.util.Arrays.toString(currUi.getInternals().getRouter().getRegistry().getRegisteredRoutes().toArray())
-        );
+        logger.info("currUi id: "+currUi.getUIId());
         MessageList messageList = new MessageList();
 
         add(messageList, createInputLayout());
@@ -144,9 +148,11 @@ public class MainView extends VerticalLayout  {
                                 )
                         ));
                 savedUI = getUI().get();
-            }catch (UIDetachedException uide){
+            }catch (  UIDetachedException  uide){
+                Exceptions.isErrorCallbackNotImplemented(uide);
                 logger.info("Got UIDetachedException");
                 logger.info("session is NULL");
+
                 new Thread(()->{
 
                     logger.info("new thread spawned");
@@ -160,9 +166,7 @@ public class MainView extends VerticalLayout  {
                             }
 
                     );
-                }
-
-                ).start();
+                }).start();
 //                throw new UIDetachedException();
             }
             }
@@ -245,9 +249,9 @@ public class MainView extends VerticalLayout  {
             String botReply = "";
             String userMsgTimeRcvd = LocalDateTime.now().toString();
 
-            System.out.println("provided userid: "+username);
+            logger.info("provided userid: "+username);
 //            System.out.println("ack: "+ackId);
-            System.out.println("provided userResponse: "+userMessage+"\n");
+            logger.info("provided userResponse: "+userMessage+"\n");
             String userResponseFmtd = StringFmtr.inputSanitizer(userMessage.toLowerCase());
             String userIdFmtd = StringFmtr.inputSanitizer(username);
             String ackIdFmtd = StringFmtr.inputSanitizer(ackId);

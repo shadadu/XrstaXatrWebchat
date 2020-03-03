@@ -1,7 +1,8 @@
 .main-view h1 {
-    margin: 0;
+    margin: 32px;
     padding: 32px;
     width: 100%;
+    text-align:center;
 }
 
 .message-list {

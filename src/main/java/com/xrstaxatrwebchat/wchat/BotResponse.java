@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.logging.Logger;
 
 
 public class BotResponse {
@@ -23,6 +24,7 @@ public class BotResponse {
 
     private Context configurationContext;
     private Double Energy;
+    private Logger botResponseLogger = Logger.getLogger("BotResponseLogger");
 
     void setEnergy(Double energy){
         this.Energy = energy;
@@ -114,7 +116,7 @@ public class BotResponse {
         try{
             wordsStream.close();
         }catch (IOException ioe){
-            System.out.println("resource already closed or does not exist");
+            botResponseLogger.info("resource already closed or does not exist");
             ioe.printStackTrace();
         }
 
@@ -202,7 +204,7 @@ public class BotResponse {
 
             double averageActivation = activationSums.sum(0).sum(0).getDouble(0) *100 / (dicti.size() * numberWordsResponse);
 
-            System.out.println("averageActivation: "+ averageActivation+ " "+numberWordsResponse );
+            botResponseLogger.info("averageActivation: "+ averageActivation+ " "+numberWordsResponse );
 
             double normalizedTotalActivations = Math
                     .log(activationSums.sum(0).sum(0).getDouble(0) *100) / (dicti.size() * numberWordsResponse );
