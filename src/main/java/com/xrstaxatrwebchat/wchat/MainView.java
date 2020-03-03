@@ -55,7 +55,7 @@ import java.util.logging.Logger;
 @StyleSheet("frontend://styles/styles.css")
 @Route
 @Push
-public class MainView extends VerticalLayout  {
+public class MainView extends VerticalLayout {
 
     /**
      * Construct a new Vaadin view.
@@ -70,6 +70,7 @@ public class MainView extends VerticalLayout  {
     private List<String> currentUsers;
     private UI savedUI;
     private Logger logger = Logger.getLogger("MainView-logger");
+    private Thread holdThread;
 
     @Autowired
     private ComputationGraph net;
@@ -92,6 +93,7 @@ public class MainView extends VerticalLayout  {
 
         H1 header = new H1("XrstaXatr \\{o_o}/ ... a chatbot with christian sensibilities");
         header.getElement().getStyle().set("text-align", "center");
+//        header.getElement().getStyle().set("font-size", "5");
 
         header.getElement().getThemeList().add("dark");
 
@@ -103,9 +105,14 @@ public class MainView extends VerticalLayout  {
 
     private void askUsername(){
 
-        HorizontalLayout layout = new HorizontalLayout();
+//        HorizontalLayout layout = new HorizontalLayout();
+        VerticalLayout layout = new VerticalLayout();
         TextField userNameField = new TextField();
         Button startButton = new Button("Enter your name to start chat...");
+
+        layout.setHorizontalComponentAlignment(Alignment.CENTER, userNameField);
+        layout.setHorizontalComponentAlignment(Alignment.CENTER, startButton);
+
 
         List<String> RESERVED_NAMES = Arrays.asList("bot", "chatbot", "moderator", "imod");
 
@@ -139,6 +146,7 @@ public class MainView extends VerticalLayout  {
         expand(messageList);
 
         messages.subscribe( msg -> {
+
             try{
                 logger.info("message w/o new thread");
                 getUI().ifPresent(ui ->
@@ -148,10 +156,12 @@ public class MainView extends VerticalLayout  {
                                 )
                         ));
                 savedUI = getUI().get();
-            }catch (  UIDetachedException  uide){
-                Exceptions.isErrorCallbackNotImplemented(uide);
+                holdThread = Thread.currentThread();
+            }catch (  Throwable  throwable ){
+//                Exceptions.isErrorCallbackNotImplemented(throwable);
                 logger.info("Got UIDetachedException");
                 logger.info("session is NULL");
+
 
                 new Thread(()->{
 
