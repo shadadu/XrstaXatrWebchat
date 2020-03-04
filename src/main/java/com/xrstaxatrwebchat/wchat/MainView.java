@@ -4,19 +4,13 @@ import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
-import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.server.VaadinRequest;
-import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import com.xrstaxatrwebchat.wchat.Utils.CorpusProcessor;
 import com.xrstaxatrwebchat.wchat.Utils.GetInitContext;
@@ -91,9 +85,10 @@ public class MainView extends VerticalLayout {
         setPadding(true);
         setMargin(true);
 
-        H1 header = new H1("XrstaXatr \\{o_o}/ ... a chatbot with christian sensibilities");
+        H1 header = new H1("XrstaXatr ... a christian sensibilities chatbot");
         header.getElement().getStyle().set("text-align", "center");
-//        header.getElement().getStyle().set("font-size", "5");
+        header.getElement().getStyle().set("text-overflow", "ellipsis");
+        header.getElement().getStyle().set("overflow", "hidden");
 
         header.getElement().getThemeList().add("dark");
 
@@ -112,7 +107,6 @@ public class MainView extends VerticalLayout {
 
         layout.setHorizontalComponentAlignment(Alignment.CENTER, userNameField);
         layout.setHorizontalComponentAlignment(Alignment.CENTER, startButton);
-
 
         List<String> RESERVED_NAMES = Arrays.asList("bot", "chatbot", "moderator", "imod");
 
@@ -148,7 +142,7 @@ public class MainView extends VerticalLayout {
         messages.subscribe( msg -> {
 
             try{
-                logger.info("message w/o new thread");
+                logger.info("try message w/o new thread");
                 getUI().ifPresent(ui ->
                         ui.access(() -> messageList.add(
                                 new Paragraph(msg.getFrom() + ": " +
@@ -157,11 +151,10 @@ public class MainView extends VerticalLayout {
                         ));
                 savedUI = getUI().get();
                 holdThread = Thread.currentThread();
+                logger.info("completed get message w/o new thread");
             }catch (  Throwable  throwable ){
 //                Exceptions.isErrorCallbackNotImplemented(throwable);
                 logger.info("Got UIDetachedException");
-                logger.info("session is NULL");
-
 
                 new Thread(()->{
 
@@ -169,7 +162,7 @@ public class MainView extends VerticalLayout {
                     UI.setCurrent(savedUI);
                     VaadinSession.setCurrent(savedUI.getSession());
                     messages.subscribe( message -> {
-                                logger.info("message w/ new thread created");
+                                logger.info("try message w/ new thread created");
                                 savedUI.access( () ->messageList.add(
                                         new Paragraph(message.getFrom() + ": " +
                                                 message.getMessage()) ));
@@ -178,62 +171,11 @@ public class MainView extends VerticalLayout {
                     );
                 }).start();
 //                throw new UIDetachedException();
+                logger.info("Completed message with spawned thread");
             }
             }
 
         );
-
-
-
-
-//        if( session == null ){
-//            logger.info("session is NULL");
-//            new Thread(()->{
-//
-//                logger.info("new thread spawned");
-//                UI.setCurrent(savedUI);
-//                VaadinSession.setCurrent(savedUI.getSession());
-//                messages.subscribe( message -> {
-//                    logger.info("message w/ new thread created");
-//                    savedUI.access( () ->messageList.add(
-//                                    new Paragraph(message.getFrom() + ": " +
-//                                            message.getMessage()) ));
-//                        }
-//
-//                );
-//            }
-//
-//            ).start();
-//
-//        }else{
-//            logger.info("session is NOT NULL");
-//            messages.subscribe( msg -> {
-//                logger.info("message w/o new thread");
-//                getUI().ifPresent(ui ->
-//                        ui.access(() -> messageList.add(
-//                                new Paragraph(msg.getFrom() + ": " +
-//                                        msg.getMessage())
-//                                )
-//                        ));
-//                        savedUI = getUI().get();
-//                }
-//            );
-//        }
-
-//        messages.subscribe( msg -> {
-//            getUI().ifPresent(ui ->
-//
-//                            ui.access(() ->
-//                                    messageList.add(
-//                                            new Paragraph(msg.getFrom() + ": " +
-//                                                    msg.getMessage())
-//                                    )
-//
-//                            ));
-//                    savedUI = getUI().get();
-//                }
-//
-//        );
 
     }
 
@@ -271,7 +213,7 @@ public class MainView extends VerticalLayout {
                 Context confContext = new GetInitContext().fun();
                 botReply = new BotResponse(confContext, 0.0).getBotResponse(userResponseFmtd, net, corpusProcessor);
 
-                System.out.println("botReply: "+botReply);
+                logger.info("botReply: "+botReply);
 
                 MessagePojo userMsgPojo = new MessagePojo(userIdFmtd, "bot", userResponseFmtd, userMsgTimeRcvd, ackIdFmtd);
                 MessagePojo botMsgPojo = new MessagePojo("bot", userIdFmtd, botReply, LocalDateTime.now().toString(), ackIdFmtd);
@@ -285,18 +227,20 @@ public class MainView extends VerticalLayout {
                         confContext.close();
                     }
                 }catch(NamingException ne){
-                    System.out.println("Error removing contexloader "+ne.getExplanation());
+                    logger.info("Error removing contexloader "+ne.getExplanation());
                     ne.printStackTrace();
                 }
 
                 confContext.close();
 
             }catch (OutOfMemoryError | Exception e){
-                Logger.getLogger("Encountered an error during response generation");
+                logger.info("Encountered an error during response generation");
                 e.printStackTrace();
             }
 
-            publisher.onNext(new ChatMessage("\\{o_o}/ ", botReply));
+
+
+            //publisher.onNext(new ChatMessage("{o_o} XrstaXatr ", botReply));
             messageField.clear();
             messageField.focus();
 

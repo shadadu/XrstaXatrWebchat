@@ -1,6 +1,8 @@
 package com.xrstaxatrwebchat.wchat;
 
-public class ChatMessage {
+import com.vaadin.flow.component.Component;
+
+public class ChatMessage extends Component {
 
     private String from;
     private String message;
