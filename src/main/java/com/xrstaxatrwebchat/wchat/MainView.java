@@ -61,7 +61,7 @@ public class MainView extends VerticalLayout {
     private UnicastProcessor<ChatMessage> publisher;
     private Flux<ChatMessage> messages;
     private String username;
-    private List<String> currentUsers;
+    private List<String> currentUsers = new ArrayList<>();
     private UI savedUI;
     private Logger logger = Logger.getLogger("MainView-logger");
     private Thread holdThread;
@@ -119,11 +119,14 @@ public class MainView extends VerticalLayout {
             }else{
                 username = userNameField.getValue();
             }
+            UI.getCurrent().setId(username);
+            currentUsers.add(username);
             remove(layout);
             showChat();
         });
 
         getUI().ifPresent(ui -> ui.setPollInterval((int) TimeUnit.MINUTES.toMillis(1)));
+
         add(layout);
     }
 
@@ -134,7 +137,17 @@ public class MainView extends VerticalLayout {
         VaadinSession session  = currUi.getSession();
 
         logger.info("currUi id: "+currUi.getUIId());
+
+        System.out.println("currentUi ID "+ UI.getCurrent().getId().get());
+        System.out.println("get1 current users: "+ Arrays.toString(currentUsers.toArray()) );
         MessageList messageList = new MessageList();
+
+        System.out.println("text of messagelist: "+  messageList.getText());
+
+//        if(currentUsers.get(0).equals(username)){
+//            add(messageList, createInputLayout());
+//            expand(messageList);
+//        }
 
         add(messageList, createInputLayout());
         expand(messageList);
@@ -142,13 +155,41 @@ public class MainView extends VerticalLayout {
         messages.subscribe( msg -> {
 
             try{
+
                 logger.info("try message w/o new thread");
-                getUI().ifPresent(ui ->
-                        ui.access(() -> messageList.add(
-                                new Paragraph(msg.getFrom() + ": " +
-                                        msg.getMessage())
-                                )
-                        ));
+                System.out.println("ui id: "+UI.getCurrent().getUIId());
+                System.out.println("ID of ui "+ UI.getCurrent().getId().get());
+                System.out.println("get2 current users: "+ Arrays.toString(currentUsers.toArray()) );
+                UI workingUi = UI.getCurrent();
+
+//                workingUi.access(() -> messageList.add(
+//                        new Paragraph(msg.getFrom() + ": " + msg.getMessage())
+//                        )
+//                        );
+
+
+//                getUI().ifPresent(ui ->
+//                        ui.access(() -> messageList.add(
+//                                new Paragraph(msg.getFrom() + ": " + msg.getMessage())
+//                                )
+//                        ));
+                if (workingUi.getId().get().equals(username)) {
+
+                    workingUi.access(() -> messageList.add(
+                            new Paragraph(msg.getFrom() + ": " + msg.getMessage())
+                            )
+                    );
+
+                    System.out.println("working ui id: "+workingUi.getId().get()+" "+username);
+                }else {
+                    System.out.println("other working ui id: "+workingUi.getId().get()+" "+username);
+                }
+
+//                getUI().ifPresent(ui ->
+//                        ui.access(() -> messageList.add(
+//                                new Paragraph(msg.getFrom() + ": " + msg.getMessage())
+//                                )
+//                        ));
                 savedUI = getUI().get();
                 holdThread = Thread.currentThread();
                 logger.info("completed get message w/o new thread");
@@ -164,8 +205,7 @@ public class MainView extends VerticalLayout {
                     messages.subscribe( message -> {
                                 logger.info("try message w/ new thread created");
                                 savedUI.access( () ->messageList.add(
-                                        new Paragraph(message.getFrom() + ": " +
-                                                message.getMessage()) ));
+                                        new Paragraph(message.getFrom() + ": " + message.getMessage()) ));
                             }
 
                     );
@@ -189,6 +229,10 @@ public class MainView extends VerticalLayout {
         Button sendButton = new Button("Send");
         sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
+//        if(currentUsers.get(0).equals(username) ){
+//            layout.add(messageField, sendButton);
+//            layout.expand(messageField);
+//        }
         layout.add(messageField, sendButton);
         layout.expand(messageField);
 
@@ -202,8 +246,8 @@ public class MainView extends VerticalLayout {
             String userMsgTimeRcvd = LocalDateTime.now().toString();
 
             logger.info("provided userid: "+username);
-//            System.out.println("ack: "+ackId);
-            logger.info("provided userResponse: "+userMessage+"\n");
+            logger.info("ack: "+ackId);
+            logger.info("provided userResponse: "+userMessage);
             String userResponseFmtd = StringFmtr.inputSanitizer(userMessage.toLowerCase());
             String userIdFmtd = StringFmtr.inputSanitizer(username);
             String ackIdFmtd = StringFmtr.inputSanitizer(ackId);
@@ -240,7 +284,7 @@ public class MainView extends VerticalLayout {
 
 
 
-            //publisher.onNext(new ChatMessage("{o_o} XrstaXatr ", botReply));
+            publisher.onNext(new ChatMessage("{o_o} XrstaXatr ", botReply));
             messageField.clear();
             messageField.focus();
 
